@@ -1,10 +1,13 @@
-int blinkPin = 0;
-int clockInPin = 1;
-int counter = 0;
-bool lastGate= false;
-bool shouldTrigger = false;
-unsigned long pulseWidth = 5;
-unsigned long previousTime;
+int           blinkPin      = 0;
+int           clockInPin    = 1;
+unsigned long pulseWidth    = 5;
+unsigned long debounceTime  = 5;
+unsigned long previousTime  = 0;
+unsigned long lastReadTime  = 0;
+int           counter       = 0;
+bool          lastGate      = false;
+bool          shouldTrigger = false;
+
 
 void setup()
 {
@@ -14,15 +17,24 @@ void setup()
 
 void loop()
 {
-  bool gateIn = digitalRead(clockInPin);
-  digitalWrite(blinkPin,gateIn);
-  /*
+  unsigned long currentTime = millis();
+
   bool nextGate = digitalRead(clockInPin);
-  if(!lastGate && nextGate){
+  bool isDebounced = (currentTime-lastReadTime) > debounceTime;
+  bool inputHasChanged = !lastGate && nextGate;
+
+  if(inputHasChanged && isDebounced){
+    lastGate = nextGate;
+    lastReadTime = currentTime;
+    
     counter++;
-    shouldTrigger=!shouldTrigger;
+    //shouldTrigger=!shouldTrigger;
+    int rotation = 0;
+    int hits = 3;
+    int barLength = 8;
+    shouldTrigger = euclid(counter,hits,barLength,rotation);
+
   }
-  lastGate = nextGate;
 
   if(shouldTrigger){
     digitalWrite(blinkPin, HIGH);
@@ -30,11 +42,12 @@ void loop()
     shouldTrigger = false;
   }
 
-  unsigned long currentTime = millis();
-  unsigned long elapsedTime = currentTime - previousTime;
-
-  if(elapsedTime > pulseWidth){
+  if((currentTime - previousTime) > pulseWidth){
     digitalWrite(blinkPin, LOW);
   }
-  */
+ 
+}
+
+bool euclid(int count, int hits, int barLength, int rotation){
+  return (((counter + rotation)*hits)%barLength)>hits;
 }
