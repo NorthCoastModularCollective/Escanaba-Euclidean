@@ -40,7 +40,7 @@ void loop()
   timeOfLastClockInChange = ifChangedAndTime.b;
 
   clockMode = whichClockModeShouldBeSet(clockInputChanged, clockMode, currentTime, timeOfLastClockInChange, timeUntilInternalClockMode);
-  previousClockInputState = stateOfClockInPin;
+  
 
   bool isNewRisingClockEdge;
 
@@ -63,7 +63,7 @@ void loop()
   bool shouldTrigger = isNewRisingClockEdge && euclid(euclidRythmParameters.phase, euclidRythmParameters.hits, euclidRythmParameters.barLength, euclidRythmParameters.rotation);
 
   timeOfLastPulseOut = processTriggerOutput(shouldTrigger, timeOfLastPulseOut, currentTime, pulseWidth);
-
+  previousClockInputState = stateOfClockInPin;
 }
 
 /* SHELL (IO) */
