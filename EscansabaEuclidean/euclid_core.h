@@ -4,20 +4,20 @@
 /*DATA TYPES*/
 typedef unsigned long milliseconds;
 struct EuclidRythmParameters {
-  int barLength;
-  int hits;
+  int barLength; // rename barlen in beats??
+  int hits; //rename to beats?
   int rotation;
-  int phase;
+  int phase; //global counter state
 };
 enum ClockMode {external, internal};
 struct InternalClock {
-  bool state;
+  bool state; //whether the clock low or high
   milliseconds timeOfLastPulse;
-  int tempo;
+  int tempo; //should this be a float? what unit this in?
 };
 template <typename T1, typename T2>  struct tuple  {
-  T1 a;
-  T2 b;
+  T1 a; // rename first
+  T2 b; //rebane second
 };
 
 /*CORE (pure functions)*/
@@ -89,6 +89,7 @@ int mapTempoInputToTempoInBpm (int inputFromRotationPin){
     int maximumTempo = 240;
     tempo = map(inputFromRotationPin,oneQuarterOfKnobRange,3*oneQuarterOfKnobRange-1,minimumTempo,maximumTempo);
   }else{
+    //should this be 1 - 40 so its not discontinuous??
     int minimumTempo = 1;
     int maximumTempo = 5;
     tempo = map(inputFromRotationPin,0,oneQuarterOfKnobRange-1,minimumTempo,maximumTempo);

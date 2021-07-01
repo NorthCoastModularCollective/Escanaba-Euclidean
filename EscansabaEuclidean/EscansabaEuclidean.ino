@@ -1,8 +1,8 @@
 
 #include "euclid_core.h"
 /* CONFIG */
-milliseconds pulseWidth = 5;
-milliseconds timeUntilInternalClockMode = 4000;
+milliseconds pulseWidth = 10; //const
+milliseconds timeUntilInternalClockMode = 4000; //const
 ClockMode clockModeOnStartup = internal; //module starts up in internal clock mode... change this line to default the clock mode to external if needed
 
 /* HARDWARE */
@@ -31,6 +31,8 @@ void setup()
 
 void loop()
 {
+
+  //-------------
   milliseconds currentTime = millis();
 
   bool stateOfClockInPin = readClockInput();
@@ -41,7 +43,8 @@ void loop()
 
   clockMode = whichClockModeShouldBeSet(clockInputChanged, clockMode, currentTime, timeOfLastClockInChange, timeUntilInternalClockMode);
   
-
+//--------------
+//---------------
   bool isNewRisingClockEdge;
 
   switch(clockMode){
@@ -53,11 +56,12 @@ void loop()
       break;
     }
     default: {
+      // case external
       isNewRisingClockEdge = detectNewRisingClockEdge(stateOfClockInPin, previousClockInputState); 
       break;
     }
   }
-  
+  //--------------------
   euclidRythmParameters = updateEuclidParams( clockMode, isNewRisingClockEdge, euclidRythmParameters);
 
   bool shouldTrigger = isNewRisingClockEdge && euclid(euclidRythmParameters.phase, euclidRythmParameters.hits, euclidRythmParameters.barLength, euclidRythmParameters.rotation);
@@ -92,6 +96,7 @@ EuclidRythmParameters updateEuclidParams( ClockMode mode, bool isNewRisingClockE
     params.phase = euclidRythmParameters.phase + 1;  
     
     if(mode==external){
+      //should this map based on number of beats in a bar
       params.rotation = map(analogRead(rotationKnobPin), 0, 1023, 0, 16);            
     }
   }
@@ -99,6 +104,7 @@ EuclidRythmParameters updateEuclidParams( ClockMode mode, bool isNewRisingClockE
 }
 
 unsigned int readTempoInput(){
+  // add debounce?
   int inputFromRotationPin = analogRead(rotationKnobPin);
  
 
