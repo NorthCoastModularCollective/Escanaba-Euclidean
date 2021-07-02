@@ -19,6 +19,36 @@ EuclidRythmParameters euclidRythmParameters;
 ClockMode clockMode = clockModeOnStartup; 
 bool previousClockInputState = false;
 InternalClock internalClock  = InternalClock {false, 0, 133};
+volatile bool thing = false;
+
+
+
+static inline void initTimer1(void)
+{
+// TCCR1 |= (1 << CTC1);  // clear timer on compare match
+ 
+ TCCR1 |= (1 << CS12) | (1 << CS11); //timer hits at 1/32 of cpu speed
+ TCCR1 &= ~((0 << CS13)|(0 << CS10)); //at 1mhz clock this is sample rate of 31250hz
+ 
+// OCR1C = 0; // compare match value ... 0 means it matches every time it counts
+// TIMSK |= (1 << OCIE1A); // enable compare match interrupt
+
+
+  // enable interrupt
+  TIMSK |= (1<<TOIE1);
+  sei();
+  
+  //initialize counter to 0
+  TCNT1=0;
+}
+
+ISR(TIM1_OVF_vect)
+{
+  TCNT1 = 0;
+  thing = !thing;
+  digitalWrite(clockOutPin, HIGH);
+}
+
 
 /* SHELL (global state and run loop) */
 
@@ -27,6 +57,7 @@ void setup()
   pinMode(clockOutPin, OUTPUT);
   pinMode(clockInPin, INPUT);
   digitalWrite(clockOutPin, LOW);
+  initTimer1();
 }
 
 void loop()
@@ -66,7 +97,7 @@ void loop()
 
   bool shouldTrigger = isNewRisingClockEdge && euclid(euclidRythmParameters.phase, euclidRythmParameters.hits, euclidRythmParameters.barLength, euclidRythmParameters.rotation);
 
-  timeOfLastPulseOut = processTriggerOutput(shouldTrigger, timeOfLastPulseOut, currentTime, pulseWidth);
+  //timeOfLastPulseOut = processTriggerOutput(shouldTrigger, timeOfLastPulseOut, currentTime, pulseWidth);
   previousClockInputState = stateOfClockInPin;
 }
 
