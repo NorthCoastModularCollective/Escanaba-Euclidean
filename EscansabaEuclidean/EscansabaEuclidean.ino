@@ -19,6 +19,7 @@ euclid_t euclidRythmState;
 ClockMode clockMode = CLOCK_MODE_ON_STARTUP; 
 bool previousClockInputState = false;
 InternalClock internalClock  = InternalClock {false, 0, 133};
+bool shouldTrigger = false;
 
 /* SHELL (global state and run loop) */
 
@@ -32,11 +33,30 @@ void setup()
 void loop()
 {
   const milliseconds_t currentTime = millis();
-
   const bool isNewRisingClockEdge = setClockModeAndUpdateClock(currentTime);
-  const bool shouldTrigger = handleEuclidAlgorithmAndUpdateEuclidParams(isNewRisingClockEdge);
-  handleTriggerOutput(shouldTrigger, currentTime);
+  shouldTrigger = handleEuclidAlgorithmAndUpdateEuclidParams(isNewRisingClockEdge);
   
+}
+
+void updateOutputTrig(){
+  const milliseconds_t currentTime = millis();
+  handleTriggerOutput(shouldTrigger, currentTime);
+ 
+}
+
+static inline void initTimer1(void)
+{
+ TCCR1 |= (1 << CTC1);  // clear timer on compare match
+ 
+ TCCR1 |= (0 << CS13) | (1 << CS12) | (1 << CS11) | (0 << CS10); //timer hits at 1/32 of cpu speed
+ //at 1mhz clock this is sample rate of 31250hz
+ OCR1C = 0; // compare match value ... 0 means it matches every time it counts
+ TIMSK |= (1 << OCIE1A); // enable compare match interrupt
+}
+
+ISR(TIMER1_COMPA_vect)
+{
+ updateOutputTrig();
 }
 
 /* SHELL (IO) */
