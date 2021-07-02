@@ -14,12 +14,15 @@ const int hitsKnobPin       = A2;
 
 /* GLOBAL MUTABLE STATE */
 milliseconds_t timeOfLastClockInChange;
-milliseconds_t timeOfLastPulseOut;
 euclid_t euclidRythmState;
 ClockMode clockMode = CLOCK_MODE_ON_STARTUP; 
 bool previousClockInputState = false;
 InternalClock internalClock  = InternalClock {false, 0, 133};
 bool shouldTrigger = false;
+
+//ISR state
+milliseconds_t timeOfLastPulseOut;
+
 
 /* SHELL (global state and run loop) */
 
@@ -38,12 +41,6 @@ void loop()
   
 }
 
-void updateOutputTrig(){
-  const milliseconds_t currentTime = millis();
-  handleTriggerOutput(shouldTrigger, currentTime);
- 
-}
-
 static inline void initTimer1(void)
 {
  TCCR1 |= (1 << CTC1);  // clear timer on compare match
@@ -56,7 +53,16 @@ static inline void initTimer1(void)
 
 ISR(TIMER1_COMPA_vect)
 {
- updateOutputTrig();
+  const milliseconds_t currentTime = millis();
+  milliseconds_t timeOfPulseOutToReturn = timeOfLastPulseOut;
+  if (shouldTrigger) {
+    digitalWrite(clockOutPin, HIGH);
+    timeOfPulseOutToReturn = currentTime;
+  } else if ((currentTime - timeOfLastPulseOut) > PULSE_WIDTH) {
+
+    digitalWrite(clockOutPin, LOW);
+  }
+  timeOfLastPulseOut = timeOfPulseOutToReturn;
 }
 
 /* SHELL (IO) */
@@ -100,17 +106,7 @@ bool handleEuclidAlgorithmAndUpdateEuclidParams(const bool& isNewRisingClockEdge
   return shouldTrigger;
 }
 
-void handleTriggerOutput(const bool& shouldTrigger, const milliseconds_t& currentTime) {
-  milliseconds_t timeOfPulseOutToReturn = timeOfLastPulseOut;
-  if (shouldTrigger) {
-    digitalWrite(clockOutPin, HIGH);
-    timeOfPulseOutToReturn = currentTime;
-  } else if ((currentTime - timeOfLastPulseOut) > PULSE_WIDTH) {
 
-    digitalWrite(clockOutPin, LOW);
-  }
-  timeOfLastPulseOut = timeOfPulseOutToReturn;
-}
 
 bool readClockInput() {
   return !digitalRead(clockInPin);
