@@ -1,9 +1,9 @@
 
 #include "euclid_core.h"
 /* CONFIG */
-milliseconds pulseWidth = 10; //const
-milliseconds timeUntilInternalClockMode = 4000; //const
-ClockMode clockModeOnStartup = internal; //module starts up in internal clock mode... change this line to default the clock mode to external if needed
+static const milliseconds_t PULSE_WIDTH = 10; 
+static const milliseconds_t TIME_UNTIL_INTERNAL_CLOCK_MODE = 4000; 
+static const ClockMode CLOCK_MODE_ON_STARTUP = internal; //module starts up in internal clock mode... change this line to default the clock mode to external if needed
 
 /* HARDWARE */
 const int clockOutPin       = 1;
@@ -12,11 +12,11 @@ const int barLengthKnobPin  = A1;
 const int rotationKnobPin   = A3;
 const int hitsKnobPin       = A2;
 
-/* GLOBAL STATE */
-milliseconds timeOfLastClockInChange;
-milliseconds timeOfLastPulseOut;
-EuclidRythmParameters euclidRythmParameters;
-ClockMode clockMode = clockModeOnStartup; 
+/* GLOBAL MUTABLE STATE */
+milliseconds_t timeOfLastClockInChange;
+milliseconds_t timeOfLastPulseOut;
+euclid_t euclidRythmState;
+ClockMode clockMode = CLOCK_MODE_ON_STARTUP; 
 bool previousClockInputState = false;
 InternalClock internalClock  = InternalClock {false, 0, 133};
 
@@ -31,69 +31,77 @@ void setup()
 
 void loop()
 {
+  const milliseconds_t currentTime = millis();
 
-  //-------------
-  milliseconds currentTime = millis();
-
-  bool stateOfClockInPin = readClockInput();
-
-  tuple <bool, milliseconds> ifChangedAndTime = didClockInputChange(stateOfClockInPin, previousClockInputState, currentTime, timeOfLastClockInChange);
-  bool clockInputChanged = ifChangedAndTime.a;
-  timeOfLastClockInChange = ifChangedAndTime.b;
-
-  clockMode = whichClockModeShouldBeSet(clockInputChanged, clockMode, currentTime, timeOfLastClockInChange, timeUntilInternalClockMode);
+  const bool isNewRisingClockEdge = setClockModeAndUpdateClock(currentTime);
+  const bool shouldTrigger = handleEuclidAlgorithmAndUpdateEuclidParams(isNewRisingClockEdge);
+  handleTriggerOutput(shouldTrigger, currentTime);
   
-//--------------
-//---------------
-  bool isNewRisingClockEdge;
-
-  switch(clockMode){
-    case internal: {
-      bool previousInternalClockState = internalClock.state;
-      internalClock.tempo = readTempoInput();
-      internalClock = updateInternalClock(currentTime, internalClock); 
-      isNewRisingClockEdge = detectNewRisingClockEdge(internalClock.state, previousInternalClockState);
-      break;
-    }
-    default: {
-      // case external
-      isNewRisingClockEdge = detectNewRisingClockEdge(stateOfClockInPin, previousClockInputState); 
-      break;
-    }
-  }
-  //--------------------
-  euclidRythmParameters = updateEuclidParams( clockMode, isNewRisingClockEdge, euclidRythmParameters);
-
-  bool shouldTrigger = isNewRisingClockEdge && euclid(euclidRythmParameters.phase, euclidRythmParameters.hits, euclidRythmParameters.barLength, euclidRythmParameters.rotation);
-
-  timeOfLastPulseOut = processTriggerOutput(shouldTrigger, timeOfLastPulseOut, currentTime, pulseWidth);
-  previousClockInputState = stateOfClockInPin;
 }
 
 /* SHELL (IO) */
 
-milliseconds processTriggerOutput(bool shouldTrigger, milliseconds timeOfLastPulseOut, milliseconds currentTime, milliseconds pulseWidth) {
-  milliseconds timeOfPulseOutToReturn = timeOfLastPulseOut;
+bool setClockModeAndUpdateClock(const milliseconds_t& currentTime){
+
+  bool stateOfClockInPin = readClockInput();
+
+  tuple <bool, milliseconds_t> ifChangedAndTime = didClockInputChange(stateOfClockInPin, previousClockInputState, currentTime, timeOfLastClockInChange);
+  bool clockInputChanged = ifChangedAndTime.first;
+  timeOfLastClockInChange = ifChangedAndTime.second;
+
+  clockMode = whichClockModeShouldBeSet(clockInputChanged, clockMode, currentTime, timeOfLastClockInChange, TIME_UNTIL_INTERNAL_CLOCK_MODE);
+  
+  bool isNewRisingClockEdge;
+
+  switch(clockMode){
+    case internal: {
+      bool previousInternalClockState = internalClock.clockSignalState;
+      internalClock.tempo = readTempoInput();
+      internalClock = updateInternalClock(currentTime, internalClock); 
+      isNewRisingClockEdge = detectNewRisingClockEdge(internalClock.clockSignalState, previousInternalClockState);
+      break;
+    }
+    case external: {
+      isNewRisingClockEdge = detectNewRisingClockEdge(stateOfClockInPin, previousClockInputState); 
+      break;
+    }
+  }
+  previousClockInputState = stateOfClockInPin;
+
+  return isNewRisingClockEdge;
+}
+
+bool handleEuclidAlgorithmAndUpdateEuclidParams(const bool& isNewRisingClockEdge){
+  euclidRythmState = readEuclidParams( clockMode, isNewRisingClockEdge, euclidRythmState);
+  const tuple<bool, euclid_t> shouldTriggerAndEuclidState = euclid_t::process(euclidRythmState);
+  euclidRythmState = shouldTriggerAndEuclidState.second;
+  bool shouldTrigger = shouldTriggerAndEuclidState.first;
+  shouldTrigger &= isNewRisingClockEdge;
+  return shouldTrigger;
+}
+
+void handleTriggerOutput(const bool& shouldTrigger, const milliseconds_t& currentTime) {
+  milliseconds_t timeOfPulseOutToReturn = timeOfLastPulseOut;
   if (shouldTrigger) {
     digitalWrite(clockOutPin, HIGH);
     timeOfPulseOutToReturn = currentTime;
-  } else if ((currentTime - timeOfLastPulseOut) > pulseWidth) {
+  } else if ((currentTime - timeOfLastPulseOut) > PULSE_WIDTH) {
 
     digitalWrite(clockOutPin, LOW);
   }
-  return timeOfPulseOutToReturn;
+  timeOfLastPulseOut = timeOfPulseOutToReturn;
 }
 
 bool readClockInput() {
   return !digitalRead(clockInPin);
 }
 
-EuclidRythmParameters updateEuclidParams( ClockMode mode, bool isNewRisingClockEdge, EuclidRythmParameters previousParams) {
-  EuclidRythmParameters params = previousParams;
+euclid_t readEuclidParams(const ClockMode& mode, const bool& isNewRisingClockEdge, euclid_t params) {
+
   if (isNewRisingClockEdge) {
-    params.barLength = map(analogRead(barLengthKnobPin), 0, 1023, 1, 16);
-    params.hits = map(analogRead(hitsKnobPin), 0, 1023, 0, 16);
-    params.phase = euclidRythmParameters.phase + 1;  
+    params.barLengthInBeats = map(analogRead(barLengthKnobPin), 0, 1023, 1, 16);
+    params.beats = map(analogRead(hitsKnobPin), 0, 1023, 0, 16);
+    // params.counter = euclidRythmParameters.counter + 1;  
     
     if(mode==external){
       //should this map based on number of beats in a bar
@@ -105,8 +113,7 @@ EuclidRythmParameters updateEuclidParams( ClockMode mode, bool isNewRisingClockE
 
 unsigned int readTempoInput(){
   // add debounce?
-  int inputFromRotationPin = analogRead(rotationKnobPin);
- 
+  const int inputFromRotationPin = analogRead(rotationKnobPin);
 
   return mapTempoInputToTempoInBpm(inputFromRotationPin);  
 }
