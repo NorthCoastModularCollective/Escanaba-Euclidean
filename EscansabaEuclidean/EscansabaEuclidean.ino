@@ -28,7 +28,7 @@ void setup()
   pinMode(clockOutPin, OUTPUT);
   pinMode(clockInPin, INPUT);
   digitalWrite(clockOutPin, LOW);
-  initTimer1();
+
 }
 
 void loop()
