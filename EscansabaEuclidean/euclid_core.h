@@ -4,10 +4,10 @@
 /*DATA TYPES*/
 typedef unsigned long milliseconds;
 struct EuclidRythmParameters {
-  int barLengthInBeats; // rename barlen in beats??
-  int beats; //rename to beats?
-  int rotation;
-  int counter;
+  unsigned short barLengthInBeats; // rename barlen in beats??
+  unsigned short beats; //rename to beats?
+  unsigned short rotation;
+  unsigned short counter;
 };
 enum ClockMode {external, internal};
 struct InternalClock {
@@ -15,19 +15,23 @@ struct InternalClock {
   milliseconds timeOfLastPulse;
   int tempo; //should this be a float? what unit this in?
 };
-template <typename T1, typename T2>  struct tuple  {
-  T1 a; // rename first
-  T2 b; //rebane second
+template <typename T1, typename T2>  
+struct tuple  {
+  T1 first;
+  T2 second;
 };
 
 /*CORE (pure functions)*/
-float convertBPMToPeriodInMillis(int bpm){
+inline const float convertBPMToPeriodInMillis(const int& bpm){
   float SecondsPerMinute = 60.0;
   float MillisPerSecond = 1000.0;
   return ((1.0/((float)bpm))*SecondsPerMinute*MillisPerSecond);  
 }
 
-InternalClock updateInternalClock(milliseconds currentTime, InternalClock clk){
+inline const InternalClock updateInternalClock(
+  const milliseconds& currentTime, 
+  const InternalClock& clk
+){
   float noteDivision = 8.0;
   milliseconds PULSE_WIDTH = (milliseconds) (convertBPMToPeriodInMillis(clk.tempo)/noteDivision);
   if((currentTime-clk.timeOfLastPulse)>=PULSE_WIDTH){
@@ -37,7 +41,12 @@ InternalClock updateInternalClock(milliseconds currentTime, InternalClock clk){
    
 }
 
-tuple <bool, milliseconds>  didClockInputChange(bool stateOfClockInPin, bool previousClockInputState, milliseconds currentTime, milliseconds timeOfLastClockChange) {
+inline const tuple <bool, milliseconds>  didClockInputChange(
+  const bool& stateOfClockInPin, 
+  const bool& previousClockInputState, 
+  const milliseconds& currentTime, 
+  const milliseconds& timeOfLastClockChange
+){
   bool didChange = previousClockInputState != stateOfClockInPin;
   milliseconds timeToReturn = timeOfLastClockChange;
   if (didChange) {
@@ -47,13 +56,13 @@ tuple <bool, milliseconds>  didClockInputChange(bool stateOfClockInPin, bool pre
   return tuple<bool, milliseconds> {didChange, timeToReturn};
 }
 
-ClockMode whichClockModeShouldBeSet(bool clockInputChanged,
-                                    ClockMode currentMode, 
-                                    milliseconds currentTime, 
-                                    milliseconds timeOfLastClockChange, 
-                                    milliseconds TIME_UNTIL_INTERNAL_CLOCK_MODE
-                                   ) {
-      
+inline const ClockMode whichClockModeShouldBeSet(
+  const bool& clockInputChanged,
+  const ClockMode& currentMode, 
+  const milliseconds& currentTime, 
+  const milliseconds& timeOfLastClockChange, 
+  const milliseconds& TIME_UNTIL_INTERNAL_CLOCK_MODE
+){
  
   ClockMode clockModeToReturn = currentMode;
   milliseconds timeToReturn = timeOfLastClockChange;
@@ -68,16 +77,24 @@ ClockMode whichClockModeShouldBeSet(bool clockInputChanged,
   return clockModeToReturn;
 }
 
-bool detectNewRisingClockEdge(bool currentClockInputState, bool previousClockInputState) {
+inline const bool detectNewRisingClockEdge(
+  const bool& currentClockInputState, 
+  const bool& previousClockInputState
+){
   bool hasChangedAndIsPositive = !previousClockInputState && currentClockInputState;
   return hasChangedAndIsPositive;
 }
 
-bool euclid(int count, int beats, int barLengthInBeats, int rotation) {
+inline const bool euclid(
+  const unsigned short& count,
+  const unsigned short& beats,
+  const unsigned short& barLengthInBeats,
+  const unsigned short& rotation
+){
   return (((count + rotation) * beats) % barLengthInBeats) < beats;
 }
 
-int mapTempoInputToTempoInBpm (int inputFromRotationPin){
+inline const int mapTempoInputToTempoInBpm (const int& inputFromRotationPin){
   const int oneQuarterOfKnobRange = 256;
   long tempo;
   if(inputFromRotationPin>=3*oneQuarterOfKnobRange){
