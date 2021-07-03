@@ -3,7 +3,7 @@
 
 /*DATA TYPES*/
 typedef unsigned long milliseconds;
-struct EuclidRythmParameters {
+struct EuclidRhythmParameters {
   unsigned short barLengthInBeats; // rename barlen in beats??
   unsigned short beats; //rename to beats?
   unsigned short rotation;

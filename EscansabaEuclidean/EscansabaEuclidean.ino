@@ -4,6 +4,7 @@
 const milliseconds PULSE_WIDTH = 10;
 const milliseconds TIME_UNTIL_INTERNAL_CLOCK_MODE = 4000;
 const ClockMode CLOCK_MODE_ON_STARTUP = internal; //module starts up in internal clock mode... change this line to default the clock mode to external if needed
+const unsigned short MAX_BEATS_IN_BAR = 16;
 
 /* HARDWARE */
 const int clockOutPin       = 1;
@@ -15,7 +16,7 @@ const int hitsKnobPin       = A2;
 /* GLOBAL STATE */
 milliseconds timeOfLastClockInChange;
 milliseconds timeOfLastPulseOut;
-EuclidRythmParameters euclidRhythmParameters;
+EuclidRhythmParameters euclidRhythmParameters;
 ClockMode clockMode = CLOCK_MODE_ON_STARTUP; 
 bool previousClockInputState = false;
 InternalClock internalClock  = InternalClock {false, 0, 133};
@@ -88,16 +89,19 @@ bool readClockInput() {
   return !digitalRead(clockInPin);
 }
 
-EuclidRythmParameters updateEuclidParams( ClockMode mode, bool isNewRisingClockEdge, EuclidRythmParameters previousParams) {
-  EuclidRythmParameters params = previousParams;
+EuclidRhythmParameters updateEuclidParams( 
+  ClockMode mode, 
+  bool isNewRisingClockEdge, 
+  EuclidRhythmParameters params
+) {
   if (isNewRisingClockEdge) {
-    params.barLengthInBeats = map(analogRead(barLengthKnobPin), 0, 1023, 1, 16);
-    params.beats = map(analogRead(hitsKnobPin), 0, 1023, 0, 16);
+    params.barLengthInBeats = map(analogRead(barLengthKnobPin), 0, 1023, 1, MAX_BEATS_IN_BAR);
+    const int rawHitsValue = analogRead(hitsKnobPin);
+    params.beats = rawHitsValue>5?map(rawHitsValue, 5, 1023, 1, params.barLengthInBeats):0;
     params.counter = euclidRhythmParameters.counter + 1;  
     
     if(mode==external){
-      //should this map based on number of beats in a bar
-      params.rotation = map(analogRead(rotationKnobPin), 0, 1023, 0, 16);            
+      params.rotation = map(analogRead(rotationKnobPin), 0, 1023, 0, params.barLengthInBeats);            
     }
   }
   return params;
