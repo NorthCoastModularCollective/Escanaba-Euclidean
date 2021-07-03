@@ -4,14 +4,14 @@
 /*DATA TYPES*/
 typedef unsigned long milliseconds;
 struct EuclidRythmParameters {
-  int barLength; // rename barlen in beats??
-  int hits; //rename to beats?
+  int barLengthInBeats; // rename barlen in beats??
+  int beats; //rename to beats?
   int rotation;
-  int phase; //global counter state
+  int counter;
 };
 enum ClockMode {external, internal};
 struct InternalClock {
-  bool state; //whether the clock low or high
+  bool isClockHigh;
   milliseconds timeOfLastPulse;
   int tempo; //should this be a float? what unit this in?
 };
@@ -29,9 +29,9 @@ float convertBPMToPeriodInMillis(int bpm){
 
 InternalClock updateInternalClock(milliseconds currentTime, InternalClock clk){
   float noteDivision = 8.0;
-  milliseconds pulseWidth = (milliseconds) (convertBPMToPeriodInMillis(clk.tempo)/noteDivision);
-  if((currentTime-clk.timeOfLastPulse)>=pulseWidth){
-    return InternalClock {!clk.state, currentTime, clk.tempo};
+  milliseconds PULSE_WIDTH = (milliseconds) (convertBPMToPeriodInMillis(clk.tempo)/noteDivision);
+  if((currentTime-clk.timeOfLastPulse)>=PULSE_WIDTH){
+    return InternalClock {!clk.isClockHigh, currentTime, clk.tempo};
   }
   return clk;
    
@@ -51,7 +51,7 @@ ClockMode whichClockModeShouldBeSet(bool clockInputChanged,
                                     ClockMode currentMode, 
                                     milliseconds currentTime, 
                                     milliseconds timeOfLastClockChange, 
-                                    milliseconds timeUntilInternalClockMode
+                                    milliseconds TIME_UNTIL_INTERNAL_CLOCK_MODE
                                    ) {
       
  
@@ -61,7 +61,7 @@ ClockMode whichClockModeShouldBeSet(bool clockInputChanged,
     clockModeToReturn = external;
     timeToReturn = currentTime;
   }
-  if (currentTime - timeOfLastClockChange > timeUntilInternalClockMode) {
+  if (currentTime - timeOfLastClockChange > TIME_UNTIL_INTERNAL_CLOCK_MODE) {
     clockModeToReturn = internal;
   }
 
@@ -73,8 +73,8 @@ bool detectNewRisingClockEdge(bool currentClockInputState, bool previousClockInp
   return hasChangedAndIsPositive;
 }
 
-bool euclid(int count, int hits, int barLength, int rotation) {
-  return (((count + rotation) * hits) % barLength) < hits;
+bool euclid(int count, int beats, int barLengthInBeats, int rotation) {
+  return (((count + rotation) * beats) % barLengthInBeats) < beats;
 }
 
 int mapTempoInputToTempoInBpm (int inputFromRotationPin){
