@@ -55,8 +55,7 @@ void loop()
       isNewRisingClockEdge = detectNewRisingClockEdge(internalClock.isClockHigh, previousInternalClockState);
       break;
     }
-    default: {
-      // case external
+    case external: {
       isNewRisingClockEdge = detectNewRisingClockEdge(stateOfClockInPin, previousClockInputState); 
       break;
     }
