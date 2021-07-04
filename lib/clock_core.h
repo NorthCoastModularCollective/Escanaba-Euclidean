@@ -11,6 +11,7 @@ struct InternalClock {
   bool isClockHigh;
   milliseconds timeOfLastPulse;
   int tempo; //should this be a float? what unit this in?
+  bool isOffbeat;
 };
 
 inline const ClockMode whichClockModeShouldBeSet(
@@ -55,11 +56,81 @@ inline const InternalClock updateInternalClock(
   float noteDivision = 8.0;
   milliseconds PULSE_WIDTH = (milliseconds) (convertBPMToPeriodInMillis(clk.tempo)/noteDivision);
   if((currentTime-clk.timeOfLastPulse)>=PULSE_WIDTH){
-    return InternalClock {!clk.isClockHigh, currentTime, clk.tempo};
+    return InternalClock {!clk.isClockHigh, currentTime, clk.tempo,!clk.isOffbeat};
   }
   return clk;
    
 }
+
+enum ClockMultiplyDivideRanges {
+  EIGHT_DIV,
+  FOUR_DIV,
+  THREE_DIV,
+  TWO_DIV,
+  ONE_POINT_FIVE_DIV,
+  ONE,
+  ONE_POINT_FIVE_MULT,
+  TWO_MULT,
+  THREE_MULT,
+  FOUR_MULT,
+  EIGHT_MULT,
+  __SIZE__ 
+};
+
+inline const InternalClock updateInternalClock(
+  const milliseconds& currentTime, 
+  const InternalClock& clk,
+  const ClockMultiplyDivideRanges& clockModifier,
+  const float& swingAmount
+){
+  float noteDivision=8.0;
+  switch (clockModifier)
+  {
+  case EIGHT_DIV:{
+    noteDivision /= 8.0;
+    break;
+  }
+    
+  case FOUR_DIV:
+    {noteDivision /= 4.0;
+    break;}
+  case THREE_DIV:
+    {noteDivision /= 3.0;
+    break;}
+  case TWO_DIV:
+    {noteDivision /= 2.0;
+    break;}
+  case ONE_POINT_FIVE_DIV:
+    {noteDivision /= 1.5;
+    break;}
+  case ONE_POINT_FIVE_MULT:
+    {noteDivision *= 1.5;
+    break;}
+  case TWO_MULT:
+    noteDivision *= 2.0;
+    break;
+  case THREE_MULT:
+   { noteDivision *= 3.0;
+    break;}
+  case FOUR_MULT:
+    {noteDivision *= 4.0;
+    break;}
+  case EIGHT_MULT:
+    {noteDivision *= 8.0;
+    break;}
+  }
+  auto tempoAsPeriod = convertBPMToPeriodInMillis(clk.tempo);
+  milliseconds period = (milliseconds) (tempoAsPeriod/noteDivision);
+  period = clk.isOffbeat?period * (1 + swingAmount):period;
+  
+  //add swing offset if on offbeat
+  if((currentTime-clk.timeOfLastPulse)>=period){
+    return InternalClock {!clk.isClockHigh, currentTime, clk.tempo,!clk.isOffbeat};
+  }
+  return clk;
+   
+}
+
 
 inline const tuple <bool, milliseconds>  didClockInputChange(
   const bool& stateOfClockInPin, 
