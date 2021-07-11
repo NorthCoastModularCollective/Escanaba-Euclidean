@@ -45,34 +45,45 @@ void loop()
 
   tuple <bool, milliseconds> ifChangedAndTime = didClockInputChange(stateOfClockInPin, previousClockInputState, currentTime, timeOfLastClockInChange);
   bool clockInputChanged = ifChangedAndTime.first;
-  timeOfLastClockInChange = ifChangedAndTime.second;
-
-  clockMode = whichClockModeShouldBeSet(clockInputChanged, clockMode, currentTime, timeOfLastClockInChange, TIME_UNTIL_INTERNAL_CLOCK_MODE);
   
-  bool isNewRisingClockEdge;
 
-  swingAmount = readSwingInput();
+  
+  
+  bool shouldTrigger;
 
   clockSpeedModifier = readClockSpeedModifier();
 
+  swingAmount = readSwingInput();
+
+  bool previousInternalClockState = internalClock.isClockHigh;
+
   switch(clockMode){
     case internal: {
-      bool previousInternalClockState = internalClock.isClockHigh;
-      internalClock.tempo = readTempoInput();
-      internalClock = updateInternalClock(currentTime, internalClock, clockSpeedModifier, swingAmount); 
-      isNewRisingClockEdge = detectNewRisingClockEdge(internalClock.isClockHigh, previousInternalClockState);
+      
+      
+      internalClock.basePeriod = convertBPMToPeriodInMillis(readTempoInput());
+      
       break;
     }
     case external: {
-      isNewRisingClockEdge = detectNewRisingClockEdge(stateOfClockInPin, previousClockInputState); 
+     
+      //auto inputPinHasNewPulse = detectNewRisingClockEdge(stateOfClockInPin, previousClockInputState); 
+      //if(inputPinHasNewPulse) internalClock.basePeriod  = currentTime - timeOfLastClockInChange;
+      shouldTrigger = detectNewRisingClockEdge(stateOfClockInPin, previousClockInputState); 
+      
       break;
     }
   }
+
+  internalClock = updateInternalClock(currentTime, internalClock, clockSpeedModifier, swingAmount);
+  shouldTrigger = detectNewRisingClockEdge(internalClock.isClockHigh, previousInternalClockState);
   
-  bool shouldTrigger = isNewRisingClockEdge;
 
   timeOfLastPulseOut = processTriggerOutput(shouldTrigger, timeOfLastPulseOut, currentTime, PULSE_WIDTH);
   previousClockInputState = stateOfClockInPin;
+  timeOfLastClockInChange = ifChangedAndTime.second;
+  clockMode = whichClockModeShouldBeSet(clockInputChanged, clockMode, currentTime, timeOfLastClockInChange, TIME_UNTIL_INTERNAL_CLOCK_MODE);
+  
 }
 
 /* SHELL (IO) */
@@ -100,10 +111,14 @@ unsigned int readTempoInput(){
   return mapTempoInputToTempoInBpm(inputFromRotationPin);  
 }
 
+float fmap(long x, long in_min, long in_max, float out_min, float out_max) {
+  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+}
+
 float readSwingInput(){
   // add debounce?
-  int inputFromRotationPin = analogRead(swingKnobPin);
-  return map(inputFromRotationPin, 0, 1023, -1, 1);  
+  int inputFromSwingPin = analogRead(swingKnobPin);
+  return fmap(inputFromSwingPin, 0, 1023, -0.8, 0.8);  
 }
 
 
@@ -111,7 +126,7 @@ float readSwingInput(){
 ClockMultiplyDivideRanges mapClockSpeedModifierInputToEnumValue(int inputFromPin){
   float stepSize = 1024.0/__SIZE__;
  // static_cast<ClockMultiplyDivideRanges>(floor(inputFromPin/stepSize));
-//  return inputFromPin>512?THREE_DIV:EIGHT_MULT;
+
   if(inputFromPin<stepSize){
     return EIGHT_DIV;
   } 

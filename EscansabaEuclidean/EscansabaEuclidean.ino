@@ -19,7 +19,7 @@ milliseconds timeOfLastPulseOut;
 EuclidRhythmParameters euclidRhythmParameters;
 ClockMode clockMode = CLOCK_MODE_ON_STARTUP; 
 bool previousClockInputState = false;
-InternalClock internalClock  = InternalClock {false, 0, 133};
+InternalClock internalClock  = InternalClock {false, 0, 133, 0};
 
 
 /* SHELL (global state and run loop) */
@@ -50,7 +50,7 @@ void loop()
   switch(clockMode){
     case internal: {
       bool previousInternalClockState = internalClock.isClockHigh;
-      internalClock.tempo = readTempoInput();
+      internalClock.basePeriod = convertBPMToPeriodInMillis(readTempoInput());
       internalClock = updateInternalClock(currentTime, internalClock); 
       isNewRisingClockEdge = detectNewRisingClockEdge(internalClock.isClockHigh, previousInternalClockState);
       break;
