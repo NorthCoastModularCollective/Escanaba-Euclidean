@@ -9,11 +9,11 @@ const unsigned short MAX_BEATS_IN_BAR = 16;
 
 
 /* HARDWARE */
-const int clockOutPin       = 1;
-const int clockInPin        = 0;
-const int swingKnobPin  = A1;
-const int rotationKnobPin   = A3;
-const int clockSpeedModifierKnobPin       = A2;
+const int clockOutPin               = 1;
+const int clockInPin                = 0;
+const int swingKnobPin              = A1;
+const int rotationKnobPin           = A3;
+const int clockSpeedModifierKnobPin = A2;
 
 /* GLOBAL STATE */
 milliseconds timeOfLastClockInChange;
@@ -45,9 +45,9 @@ void loop()
 
   tuple <bool, milliseconds> ifChangedAndTime = didClockInputChange(stateOfClockInPin, previousClockInputState, currentTime, timeOfLastClockInChange);
   bool clockInputChanged = ifChangedAndTime.first;
-  
-
-  
+  previousClockInputState = stateOfClockInPin;
+  timeOfLastClockInChange = ifChangedAndTime.second;
+  clockMode = whichClockModeShouldBeSet(clockInputChanged, clockMode, currentTime, timeOfLastClockInChange, TIME_UNTIL_INTERNAL_CLOCK_MODE);
   
   bool shouldTrigger;
 
@@ -59,31 +59,28 @@ void loop()
 
   switch(clockMode){
     case internal: {
-      
-      
       internalClock.basePeriod = convertBPMToPeriodInMillis(readTempoInput());
+      internalClock = updateInternalClock(currentTime, internalClock, clockSpeedModifier, swingAmount);
+      shouldTrigger = detectNewRisingClockEdge(internalClock.isClockHigh, previousInternalClockState);
       
       break;
     }
     case external: {
      
-      //auto inputPinHasNewPulse = detectNewRisingClockEdge(stateOfClockInPin, previousClockInputState); 
-      //if(inputPinHasNewPulse) internalClock.basePeriod  = currentTime - timeOfLastClockInChange;
+     
       shouldTrigger = detectNewRisingClockEdge(stateOfClockInPin, previousClockInputState); 
+
+      auto inputPinHasNewPulse = detectNewRisingClockEdge(stateOfClockInPin, previousClockInputState); 
+      // if(inputPinHasNewPulse){
+      //   auto timeElapsedSincePulse = currentTime - timeOfLastClockInChange;
+      // }
       
       break;
     }
   }
 
-  internalClock = updateInternalClock(currentTime, internalClock, clockSpeedModifier, swingAmount);
-  shouldTrigger = detectNewRisingClockEdge(internalClock.isClockHigh, previousInternalClockState);
-  
-
   timeOfLastPulseOut = processTriggerOutput(shouldTrigger, timeOfLastPulseOut, currentTime, PULSE_WIDTH);
-  previousClockInputState = stateOfClockInPin;
-  timeOfLastClockInChange = ifChangedAndTime.second;
-  clockMode = whichClockModeShouldBeSet(clockInputChanged, clockMode, currentTime, timeOfLastClockInChange, TIME_UNTIL_INTERNAL_CLOCK_MODE);
-  
+
 }
 
 /* SHELL (IO) */
