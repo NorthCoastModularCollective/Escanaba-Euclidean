@@ -18,13 +18,9 @@ const int clockSpeedModifierKnobPin = A2;
 /* GLOBAL STATE */
 milliseconds timeOfLastClockInChange;
 milliseconds timeOfLastPulseOut;
-ClockMode clockMode = CLOCK_MODE_ON_STARTUP; 
-bool previousClockInputState = false;
 InternalClock internalClock  = InternalClock {false, 0, 133,false};
 ClockMultiplyDivideRanges clockSpeedModifier = ONE;
 float swingAmount=0;
-
-
 
 /* SHELL (global state and run loop) */
 
@@ -42,43 +38,15 @@ void loop()
   milliseconds currentTime = millis();
 
   bool stateOfClockInPin = readClockInput();
-
-  tuple <bool, milliseconds> ifChangedAndTime = didClockInputChange(stateOfClockInPin, previousClockInputState, currentTime, timeOfLastClockInChange);
-  bool clockInputChanged = ifChangedAndTime.first;
-  previousClockInputState = stateOfClockInPin;
-  timeOfLastClockInChange = ifChangedAndTime.second;
-  clockMode = whichClockModeShouldBeSet(clockInputChanged, clockMode, currentTime, timeOfLastClockInChange, TIME_UNTIL_INTERNAL_CLOCK_MODE);
-  
-  bool shouldTrigger;
-
   clockSpeedModifier = readClockSpeedModifier();
-
   swingAmount = readSwingInput();
-
+  internalClock.basePeriod = convertBPMToPeriodInMillis(readTempoInput());
+  
   bool previousInternalClockState = internalClock.isClockHigh;
 
-  switch(clockMode){
-    case internal: {
-      internalClock.basePeriod = convertBPMToPeriodInMillis(readTempoInput());
-      internalClock = updateInternalClock(currentTime, internalClock, clockSpeedModifier, swingAmount);
-      shouldTrigger = detectNewRisingClockEdge(internalClock.isClockHigh, previousInternalClockState);
+  internalClock = updateInternalClock(currentTime, internalClock, clockSpeedModifier, swingAmount);
+  bool shouldTrigger = detectNewRisingClockEdge(internalClock.isClockHigh, previousInternalClockState);
       
-      break;
-    }
-    case external: {
-     
-     
-      shouldTrigger = detectNewRisingClockEdge(stateOfClockInPin, previousClockInputState); 
-
-      auto inputPinHasNewPulse = detectNewRisingClockEdge(stateOfClockInPin, previousClockInputState); 
-      // if(inputPinHasNewPulse){
-      //   auto timeElapsedSincePulse = currentTime - timeOfLastClockInChange;
-      // }
-      
-      break;
-    }
-  }
-
   timeOfLastPulseOut = processTriggerOutput(shouldTrigger, timeOfLastPulseOut, currentTime, PULSE_WIDTH);
 
 }
@@ -114,8 +82,15 @@ float fmap(long x, long in_min, long in_max, float out_min, float out_max) {
 
 float readSwingInput(){
   // add debounce?
-  int inputFromSwingPin = analogRead(swingKnobPin);
-  return fmap(inputFromSwingPin, 0, 1023, -0.8, 0.8);  
+  int input = analogRead(swingKnobPin);
+
+  float swing = 0;
+  if(input < 490){
+    swing = fmap(input, 0, 490, -0.8, 0);
+  } else if (input > 526){
+    swing = fmap(input, 526, 1023, 0, 0.8);
+  }
+  return swing;
 }
 
 
