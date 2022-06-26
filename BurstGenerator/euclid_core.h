@@ -1,1 +1,0 @@
-../lib/euclid_core.h

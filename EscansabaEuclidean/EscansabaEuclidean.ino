@@ -1,5 +1,8 @@
+#include <clock_core.h>
+#include <tuple.h>
+#include <euclid_core.h>
 
-#include "euclid_core.h"
+
 /* CONFIG */
 const milliseconds PULSE_WIDTH = 10;
 const milliseconds TIME_UNTIL_INTERNAL_CLOCK_MODE = 4000;
