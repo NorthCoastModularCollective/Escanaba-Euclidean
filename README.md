@@ -1,6 +1,24 @@
 # EuclideanTrigger
 A simple module, based on the ATtiny85 that creates euclidean beats from a clock input. [under development]
 
+The Escanaba Euclidean module has 3 alternate firmware modes:
+## Escanaba Euclidean Firmware 
+The Eucliean firmware generates euclidean rhythms synchronized to an external eurorack clock source. If no clock source is available it will self clock. Its 3 controls are as follows: 
+- Number of hits
+- Length of pattern in beats
+- Pattern rotation. 
+When in self clocking mode, the rotation control becomes a tempo control. 
+## Calumet Clock Firmware
+The Calument Clock firmware turns the module into a eurorack clock source. Its 3 controls are as follows:
+- Swing control
+- Clock Division/Multiplication
+- Tempo
+## Burst Generator
+The Burst Generator firmware allows the module to respond to incoming trigger signals by repeating them in a variety of ways. This allows the creation of "bouncing ball" rhythms, ratchets, and other rhythmic tricks. Its controls are as follows:
+- Number of repeats
+- Initial repeat speed
+- A "gravity" control that controls whether the repeats accelerate or decelerate in speed.
+
 # Build instructions
 
 [TODO]
