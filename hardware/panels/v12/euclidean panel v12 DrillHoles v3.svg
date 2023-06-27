@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 85.11 364.32">
+  <defs>
+    <style>
+      .cls-1 {
+        stroke-linecap: square;
+      }
+
+      .cls-1, .cls-2 {
+        stroke: #ed1c24;
+      }
+
+      .cls-1, .cls-2, .cls-3 {
+        fill: none;
+        stroke-miterlimit: 10;
+        stroke-width: .07px;
+      }
+
+      .cls-3 {
+        stroke: red;
+      }
+    </style>
+  </defs>
+  <g id="Layer_1-2" data-name="Layer 1">
+    <g id="For_Export" data-name="For Export">
+      <rect id="Panel_Outline" data-name="Panel Outline" class="cls-1" x=".04" y=".04" width="85.04" height="364.25"/>
+      <g id="Drill_Holes" data-name="Drill Holes">
+        <circle id="Rotation_Pot" data-name="Rotation Pot" class="cls-2" cx="42.65" cy="298.38" r="10.63"/>
+        <circle id="Length_Pot" data-name="Length Pot" class="cls-2" cx="42.43" cy="150.96" r="10.63"/>
+        <circle id="Attenuverter_Pot" data-name="Attenuverter Pot" class="cls-2" cx="42.63" cy="100.03" r="9.21"/>
+        <circle id="Beats_Pot" data-name="Beats Pot" class="cls-2" cx="42.67" cy="224.85" r="10.63"/>
+        <circle id="Clock_In_Jack" data-name="Clock In Jack" class="cls-2" cx="22.08" cy="68.85" r="9.21"/>
+        <circle id="Clock_Out_Jack" data-name="Clock Out Jack" class="cls-2" cx="63.18" cy="68.85" r="9.21"/>
+      </g>
+      <g id="Mounting_Holes" data-name="Mounting Holes">
+        <path id="rounded_mount_hole" data-name="rounded mount hole" class="cls-3" d="M15.49,4.01h-3.97c-1.81,0-3.29,1.48-3.29,3.29v2.48c0,1.81,1.48,3.29,3.29,3.29h3.97c1.81,0,3.29-1.48,3.29-3.29v-2.48c0-1.81-1.48-3.29-3.29-3.29Z"/>
+        <path id="rounded_mount_hole-2" data-name="rounded mount hole" class="cls-3" d="M15.49,351.25h-3.97c-1.81,0-3.29,1.48-3.29,3.29v2.48c0,1.81,1.48,3.29,3.29,3.29h3.97c1.81,0,3.29-1.48,3.29-3.29v-2.48c0-1.8-1.48-3.29-3.29-3.29Z"/>
+      </g>
+    </g>
+  </g>
+</svg>
