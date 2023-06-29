@@ -21,7 +21,8 @@ The Burst Generator firmware allows the module to respond to incoming trigger si
 
 # Build instructions
 
-[TODO]
+[How to build the hardware](https://github.com/NorthCoastModularCollective/Escanaba-Euclidean/wiki/Build-Instructions)
+
 
 
 # How To Setup Firmware
@@ -37,4 +38,5 @@ The Burst Generator firmware allows the module to respond to incoming trigger si
 10. place the chip into the mount on the back of the module. Take care to make sure the dot on the back of the chip aligns with the indent on the PCB board diagram.
 11. plug the module into your rack and have fun!
 
-
+# License
+All works are [CC BY NC](https://creativecommons.org/licenses/by-nc/4.0/) unless otherwise specified.
